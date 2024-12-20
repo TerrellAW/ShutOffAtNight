@@ -1,0 +1,71 @@
+﻿<h3 class="text-center">Timer</h3>
+
+@if (!MauiProgram.IsTimerRunning)
+{
+    <div class="d-flex">
+        <input type="number" 
+        class="form-control bg-dark text-light fs-4" 
+        placeholder="Enter time in minutes" 
+        onkeydown="return (event.keyCode !== 69 && event.keyCode !== 190 && event.keyCode !== 189 && event.keyCode !== 109)"
+        step="1"
+        min="1"
+        pattern="[0-9]*"
+        inputmode="numeric"
+        @bind="MauiProgram.InputMinutes" />
+        <button @onclick="HandleStartClick" class="btn btn-secondary fs-4">Start</button>
+    </div>
+}
+else
+{
+    <div class="d-flex flex-column text-center">
+        <!--TODO: Shutdown symbol in div that goes red when InputMinutes hits zero, after 2 seconds PC shuts down-->
+        @if (!MauiProgram.IsShuttingDown)
+        {
+            <img src="images/not_shutting_down.png" height="200" width="200" />
+        }
+        else
+        {
+            <img src="images/shutting_down.png" height="200" width="200" />
+        }
+        <p class="text-light fs-1">@MauiProgram.InputMinutes</p>
+    </div>
+}
+
+@code {
+    // TODO: 
+    // 1. Take user input as an int
+    // 2. Convert to minutes
+    // 3. Start a timer
+    // 4. Display the time remaining
+
+    public void HandleStartClick()
+    {
+        MauiProgram.IsTimerRunning = true;
+        TimerFunction();
+        Debug.WriteLine($"Input minutes: {MauiProgram.InputMinutes}");
+    }
+
+    public async void HandleShutdown()
+    {
+        if (MauiProgram.InputMinutes == 0 && MauiProgram.IsTimerRunning)
+        {
+            MauiProgram.IsShuttingDown = true;
+            StateHasChanged();
+            // Shutdown PC
+            await Task.Delay(2000);
+            Debug.WriteLine("Shutting down PC");
+            Shutdown.ShutDown();
+        }
+    }
+
+    public async void TimerFunction()
+    {
+        while (MauiProgram.IsTimerRunning)
+        {
+            await Task.Delay(60000);
+            MauiProgram.InputMinutes--;
+            StateHasChanged();
+            HandleShutdown();
+        }
+    }
+}
