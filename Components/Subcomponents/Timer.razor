@@ -1,4 +1,6 @@
-﻿<h3 class="text-center">Timer</h3>
+﻿@implements IDisposable
+
+<h3 class="text-center">Timer</h3>
 
 @if (!MauiProgram.IsTimerRunning)
 {
@@ -34,11 +36,8 @@ else
 }
 
 @code {
-    // TODO: 
-    // 1. Take user input as an int
-    // 2. Convert to minutes
-    // 3. Start a timer
-    // 4. Display the time remaining
+    private CancellationTokenSource _cancellationTokenSource = new();
+    private bool _isDisposed;
 
     public void HandleStartClick()
     {
@@ -47,7 +46,7 @@ else
         Debug.WriteLine($"Input minutes: {MauiProgram.InputMinutes}");
     }
 
-    public async void HandleShutdown()
+    public async Task HandleShutdown()
     {
         if (MauiProgram.InputMinutes == 0 && MauiProgram.IsTimerRunning)
         {
@@ -56,13 +55,14 @@ else
             // Shutdown PC
             await Task.Delay(2000);
             Debug.WriteLine("Shutting down PC");
-            Shutdown.ShutDown();
+            await Shutdown.ShutDown();
         }
     }
 
-    public async void HandleCancelClick()
+    public async Task HandleCancelClick()
     {
-        Shutdown.CancelShutdown();
+        _cancellationTokenSource.Cancel();
+        await Shutdown.CancelShutdown();
         MauiProgram.IsTimerRunning = false;
         MauiProgram.IsShuttingDown = false;
         MauiProgram.InputMinutes = 0;
@@ -71,12 +71,43 @@ else
 
     public async void TimerFunction()
     {
-        while (MauiProgram.IsTimerRunning)
+        try
         {
-            await Task.Delay(60000);
-            MauiProgram.InputMinutes--;
-            StateHasChanged();
-            HandleShutdown();
+            using var scope = _cancellationTokenSource.Token.Register(() => _isDisposed = true);
+
+            while (MauiProgram.IsTimerRunning && !_isDisposed)
+            {
+                await Task.Delay(60000, _cancellationTokenSource.Token);
+                MauiProgram.InputMinutes--;
+                StateHasChanged();
+                await HandleShutdown();
+            }
         }
+        catch (OperationCanceledException)
+        {
+            // Timer was cancelled, clean exit
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Timer error: {ex.Message}");
+            await HandleCancelClick(); // Safely reset state
+        }
+        finally
+        {
+            if (!_isDisposed)
+            {
+                await HandleCancelClick();
+            }
+        }
+    }
+
+    // Dispose of processes
+    public void Dispose()
+    {
+        if (_isDisposed) return;
+
+        _isDisposed = true;
+        _cancellationTokenSource.Cancel();
+        _cancellationTokenSource.Dispose();
     }
 }
