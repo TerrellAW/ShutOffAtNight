@@ -17,7 +17,7 @@
 }
 else
 {
-    <div class="d-flex flex-column text-center">
+    <div class="d-flex flex-column align-items-center text-center">
         <!--TODO: Shutdown symbol in div that goes red when InputMinutes hits zero, after 2 seconds PC shuts down-->
         @if (!MauiProgram.IsShuttingDown)
         {
@@ -27,7 +27,9 @@ else
         {
             <img src="images/shutting_down.png" height="200" width="200" />
         }
+        <p class="text-light"><br />Minutes remaining until shutdown:</p>
         <p class="text-light fs-1">@MauiProgram.InputMinutes</p>
+        <button @onclick="HandleCancelClick" class="btn btn-danger fs-4">Cancel</button>
     </div>
 }
 
@@ -56,6 +58,15 @@ else
             Debug.WriteLine("Shutting down PC");
             Shutdown.ShutDown();
         }
+    }
+
+    public async void HandleCancelClick()
+    {
+        Shutdown.CancelShutdown();
+        MauiProgram.IsTimerRunning = false;
+        MauiProgram.IsShuttingDown = false;
+        MauiProgram.InputMinutes = 0;
+        StateHasChanged();
     }
 
     public async void TimerFunction()

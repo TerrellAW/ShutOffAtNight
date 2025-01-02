@@ -13,5 +13,11 @@ namespace ShutOffAtNight.Code
             // Shutdown the computer
             System.Diagnostics.Process.Start("shutdown", "/s /t 0");
         }
+
+        public static void CancelShutdown()
+        {
+            // Cancel the shutdown
+            System.Diagnostics.Process.Start("shutdown", "/a");
+        }
     }
 }
