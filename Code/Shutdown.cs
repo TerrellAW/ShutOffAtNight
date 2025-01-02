@@ -3,21 +3,46 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace ShutOffAtNight.Code
 {
     internal class Shutdown
     {
-        public static void ShutDown()
+        public static async Task ShutDown()
         {
-            // Shutdown the computer
-            System.Diagnostics.Process.Start("shutdown", "/s /t 0");
+            using var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "shutdown",
+                    Arguments = "/s /t 0",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true
+                }
+            };
+
+            process.Start();
+            await process.WaitForExitAsync();
         }
 
-        public static void CancelShutdown()
+        public static async Task CancelShutdown()
         {
-            // Cancel the shutdown
-            System.Diagnostics.Process.Start("shutdown", "/a");
+            using var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "shutdown",
+                    Arguments = "/a",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true
+                }
+            };
+
+            process.Start();
+            await process.WaitForExitAsync();
         }
     }
 }
